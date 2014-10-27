@@ -15,7 +15,7 @@ Article: https://software.intel.com/en-us/html5/articles/intel-xdk-iot-edition-n
 
 
 
-var alertPhoneNumber=["+447825006369"];
+var alertPhoneNumber=[phoneNumberGoesHere];
 
 function twilioCall () {
   // Twilio Credentials 
