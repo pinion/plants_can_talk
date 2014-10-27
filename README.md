@@ -31,4 +31,5 @@ Todo:
       1. Document process
       2. Draw Diagram
       3. Simplify cabling
+      4. Comment the code
 
