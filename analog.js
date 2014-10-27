@@ -1,21 +1,37 @@
 
 /*
 
-MRAA - Low Level Skeleton Library for Communication on GNU/Linux platforms
-Library in C/C++ to interface with Galileo & other Intel platforms, in a structured and sane API with port nanmes/numbering that match boards & with bindings to javascript & python.
+Project : Plants can talk
 
-Steps for installing MRAA & UPM Library on Intel IoT Platform with IoTDevKit Linux* image
-Using a ssh client: 
-1. echo "src maa-upm http://iotdk.intel.com/repos/1.1/intelgalactic" > /etc/opkg/intel-iotdk.conf
-2. opkg update
-3. opkg upgrade
+Tools : Intel Edison with Arduino board
+        Water Pump
+        5v Relay switch
+        Humidity Sensor
 
-Article: https://software.intel.com/en-us/html5/articles/intel-xdk-iot-edition-nodejs-templates
+APIs  : LIFX API - npm install lifx
+        Twilio API - npm install twilio
+        Restify - npm install restify
+        ngrok - npm install ngrok
+
+Code  : Arduino
+        Node.js
+
+*/
+
+
+// This is a Hack - consider it as such
+/* 
+
+Todo : 
+      1. Documentat process
+      2. Draw Diagram
+      3. Simplify cabling
+
 */
 
 
 
-var alertPhoneNumber=["+447825006369"];
+var alertPhoneNumber=process.env.numberToCall;
 
 function twilioCall () {
   // Twilio Credentials 
@@ -127,10 +143,21 @@ function lifxBlink () {
 var ngrok = require('ngrok');
 var restify = require('restify');
 
-
-ngrok.connect(8080, function (err, url) {
-	console.log(url);
+ngrok.connect({
+    authtoken: process.env.ngrokToken,
+    subdomain: 'edison',
+    port: 8080
+}, function (err, url) {
+    // https://edison.ngrok.com -> 127.0.0.1:8080
+    console.log(url);
 });
+
+
+// ngrok without custom domain
+
+// ngrok.connect(8080, function (err, url) {
+//   console.log(url);
+// });
 
 var mraa = require('mraa'); //require mraa
 
@@ -155,12 +182,12 @@ function status(req, res, next) {
   console.log(analogValue);
   var status = "";
   if (analogValue >= 650) {
-	status = "I Need Water...";
+  status = "I Need Water...";
   lifxBlink();
   twilioCall();
 
   } else {
-	status = "Happy... I am Happy!";
+  status = "Happy... I am Happy!";
   }
   res.json(201, {status: status});
   next();
@@ -180,7 +207,7 @@ function respondTime(req, res, next) {
   var minutes = d.getMinutes();
   var seconds = d.getSeconds();
   res.json(201, {date: today + "/" + month + "/" + year,
-		 time: hours + ":" + minutes + ":" + seconds });
+     time: hours + ":" + minutes + ":" + seconds });
   next();
 }
 
