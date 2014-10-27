@@ -28,7 +28,7 @@ IoT Demo for a plant watering system
 
 Todo: 
 
-      1. Documentat process
+      1. Document process
       2. Draw Diagram
       3. Simplify cabling
 
