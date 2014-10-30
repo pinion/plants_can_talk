@@ -29,9 +29,14 @@ Todo :
 
 */
 
+// ======================================================================
+// Functions
+// ======================================================================
 
-
-var alertPhoneNumber=[process.env.numberToCall];
+function pwmSwitch(state) {
+  if ( state == "on" ) sh.run('echo 2048000 > /sys/class/pwm/pwmchip0/pwm3/duty_cycle');
+  if ( state == "off" ) sh.run('echo 0 > /sys/class/pwm/pwmchip0/pwm3/duty_cycle');  
+}
 
 function twilioCall () {
   // Twilio Credentials 
@@ -135,41 +140,16 @@ function lifxBlink () {
       clearInterval(intervalID);
     }
   }
-
 }
 
-
-
-var ngrok = require('ngrok');
-var restify = require('restify');
-
-ngrok.connect({
-    authtoken: process.env.ngrokToken,
-    subdomain: 'edison',
-    port: 8080
-}, function (err, url) {
-    // https://edison.ngrok.com -> 127.0.0.1:8080
-    console.log(url);
-});
-
-
-// ngrok without custom domain
-
-// ngrok.connect(8080, function (err, url) {
-//   console.log(url);
-// });
-
-var mraa = require('mraa'); //require mraa
-
-console.log('MRAA Version: ' + mraa.getVersion()); //write the mraa version to the console
-
-var analogPin0 = new mraa.Aio(0); //setup access analog input Analog pin #0 (A0)
-
-var  analogValue = analogPin0.read(); //read the value of the analog pin
-runLoop();
-
-function respond(req, res, next) {
+function moist(req, res, next) {
+  pwmSwitch("on"); 
+  pausecomp(500);  
   analogValue = analogPin0.read(); //read the value of the analog pin
+  pwmSwitch("off");
+  // exec('./off.sh');  
+
+  
 
   console.log(analogValue);
   res.json(201, {level: analogValue});
@@ -177,23 +157,29 @@ function respond(req, res, next) {
 }
 
 function status(req, res, next) {
+  
+  pwmSwitch("on");  
+  pausecomp(2000);
+
   analogValue = analogPin0.read(); //read the value of the analog pin
+  pwmSwitch("off");  
 
   console.log(analogValue);
   var status = "";
-  if (analogValue >= 650) {
-  status = "I Need Water...";
+  if (analogValue >= 850) {
+  status = "0"; 
   lifxBlink();
   twilioCall();
 
   } else {
-  status = "Happy... I am Happy!";
+  status = "1";
   }
-  res.json(201, {status: status});
+  res.send(status);
   next();
 }
 
 function respondTime(req, res, next) {
+  
   analogValue = analogPin0.read(); //read the value of the analog pin
 
   console.log(analogValue);
@@ -211,29 +197,93 @@ function respondTime(req, res, next) {
   next();
 }
 
-var server = restify.createServer();
-server.get('/moist', respond);
-server.get('/time', respondTime);
-server.get('/status', status);
-server.head('/moist', respond);
-server.get('/testBlink',lifxBlink);
-server.get('/testCall',twilioCall);
-
-server.listen(8080, function() {
-  console.log('%s listening at %s', server.name, server.url);
-});
+function pausecomp(ms) {
+  ms += new Date().getTime();
+  while (new Date() < ms){}
+} 
 
 function runLoop() {
-  var testTimeout = 10000;
+  var testTimeout = hour;
+  
+  pwmSwitch("on");  
+  pausecomp(2000);
+
   analogValue = analogPin0.read(); //read the value of the analog pin
+  pwmSwitch("off");
 
   if (analogValue >= 650) {
     console.log("I Need Water...");
     lifxBlink();
-    twilioCall();
-    testTimeout = 100000;
+    // twilioCall();
+    testTimeout = hour;
   }
 
   console.log(analogValue); //write the value of the analog pin to the console
   setTimeout(function() {runLoop();},testTimeout);
 }
+
+function startNgrok() {
+
+  ngrok.connect({
+    authtoken: process.env.ngrokToken,
+    subdomain: 'edison',
+    port: 8080
+  }, function (err, url) {
+    // https://edison.ngrok.com -> 127.0.0.1:8080
+    console.log(url);
+  });
+}
+
+// ======================================================================
+
+// time
+
+var hour = 3600000;
+
+//
+
+var alertPhoneNumber=[process.env.numberToCall];
+
+
+var ngrok = require('ngrok');
+var restify = require('restify');
+
+
+
+
+var sh = require('execSync');
+
+var mraa = require('mraa'); //require mraa
+
+console.log('MRAA Version: ' + mraa.getVersion()); //write the mraa version to the console
+
+var analogPin0 = new mraa.Aio(0); //setup access analog input Analog pin #0 (A0)
+var pwmPin9 = new mraa.Pwm(3,-1,false);
+var pinStat = new mraa.Gpio(12);
+
+pwmPin9.enable(true);
+pwmPin9.period_us(2000);
+
+
+
+
+
+
+var server = restify.createServer();
+server.get('/moist', moist);
+server.get('/time', respondTime);
+server.get('/status', status);
+server.head('/moist', moist);
+server.get('/testBlink',lifxBlink);
+server.get('/testCall',twilioCall);
+
+
+server.listen(8080, function() {
+  console.log('%s listening at %s', server.name, server.url);
+});
+
+startNgrok();
+
+runLoop();
+
+
