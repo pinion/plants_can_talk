@@ -1,28 +1,39 @@
 /*
-plant watering system using 3v-12v DC pump and humidity sensor.
-using a relay to switch a 9v mains into 
-
+  Blink
+  Turns on an LED on for one second, then off for one second, repeatedly.
+ 
+  This example code is in the public domain.
  */
  
 // Pin 13 has an LED connected on most Arduino boards.
 // give it a name:
-int led = 13; // also acts as singnal to the relay using digital pin 13
+int led = 13;
 int val;
+int humPin=9;
+
+int hour=1000*60*60;
+
+int sampleDelay=hour*8;
+
 // the setup routine runs once when you press reset:
 void setup() {                
   // initialize the digital pin as an output.
   pinMode(led, OUTPUT);  
-  pinMode(7,OUTPUT); // digital pin for humidity sensor
-  pinMode(A0, INPUT); // analog read pin for humidity sensor
+
+  pinMode(A0, INPUT);
   Serial.begin(9600); 
 }
 
 // the loop routine runs over and over again forever:
 void loop() {
   
-  digitalWrite(7,HIGH);
+  analogWrite(humPin,255);
+  delay(2000);
   int s = analogRead(A0); //take a sample
   Serial.println(s);
+  analogWrite(humPin,0);
+
+  digitalWrite(humPin,LOW);
   
   //greater than 1000, probably not touching anything
   if(s >= 1000)
@@ -33,17 +44,18 @@ void loop() {
   digitalWrite(13,HIGH);
   delay(2000);
   digitalWrite(13,LOW);
+  digitalWrite(12,HIGH);
   }
   if(s < 650 && s >= 400)
   //less than 650, greater than 400, somewhat moist
-  { Serial.println("Soil's a bit damp."); }
-  if(s < 400)
+  { Serial.println("Soil's a bit damp.");   digitalWrite(12,LOW); }
+  if(s < 400) {
   //less than 400, quite moist
   Serial.println("Soil is quite moist, thank you very much.");
+  digitalWrite(12,LOW);
+  }
+  delay(sampleDelay); //How often do you really need to take this reading?
   
-  delay(10000); //How often do you really need to take this reading?
-  
-
 
 
 
